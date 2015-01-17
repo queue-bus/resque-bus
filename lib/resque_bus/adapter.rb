@@ -1,12 +1,11 @@
-module ResqueBus
+module QueueBus
   module Adapters
-    class Resque < ResqueBus::Adapters::Base
+    class Resque < QueueBus::Adapters::Base
       def enabled!
         # know we are using it
         require 'resque'
-
-        load_scheduler
-        load_retry
+        require 'resque/scheduler'
+        require 'resque-retry'
       end
 
       def redis(&block)
@@ -21,12 +20,16 @@ module ResqueBus
         ::Resque.enqueue_at_with_queue(queue_name, epoch_seconds, klass, hash)
       end
 
+      def worker_included(base)
+        load_retry(base)
+      end
+
       def setup_heartbeat!(queue_name)
         # turn on the heartbeat
         # should be down after loading scheduler yml if you do that
         # otherwise, anytime
         name     = 'resquebus_hearbeat'
-        schedule = { 'class' => '::ResqueBus::Heartbeat',
+        schedule = { 'class' => '::QueueBus::Heartbeat',
                      'cron'  => '* * * * *',   # every minute
                      'queue' => queue_name,
                      'description' => 'I publish a heartbeat_minutes event every minute'
@@ -39,18 +42,9 @@ module ResqueBus
 
       private
 
-      def load_retry
-        require 'resque-retry'
-        ::ResqueBus::Rider.extend(::Resque::Plugins::ExponentialBackoff)
-        ::ResqueBus::Rider.extend(::ResqueBus::Adapters::Resque::RetryHandlers)
-      rescue LoadError
-        ::ResqueBus.log_application("resque-retry gem not available: bus retry will not work")
-      end
-
-      def load_scheduler
-        require 'resque/scheduler'
-      rescue LoadError
-        ::ResqueBus.log_application("resque-scheduler gem not available: heartbeat and publishing in future will not work")
+      def load_retry(base)
+        base.extend(::Resque::Plugins::ExponentialBackoff)
+        base.extend(::QueueBus::Adapters::Resque::RetryHandlers)
       end
 
       module RetryHandlers

@@ -2,6 +2,7 @@ require 'resque-bus'
 require 'resque/server'
 require 'erb'
 
+# MIGRATE TODO: move to resque gem
 # Extend ::Resque::Server to add tabs.
 module ResqueBus
   module Server
