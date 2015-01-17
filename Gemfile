@@ -2,7 +2,7 @@ source "http://rubygems.org"
 
 gemspec
 
-gem "debugger"
+#gem "debugger"
 gem "rake"
 
-gem "queue-bus", path: "../queue-bus"
+#gem "queue-bus", path: "../queue-bus"
