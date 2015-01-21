@@ -6,6 +6,9 @@ module QueueBus
         require 'resque'
         require 'resque/scheduler'
         require 'resque-retry'
+
+        QueueBus::Worker.extend(::Resque::Plugins::ExponentialBackoff)
+        QueueBus::Worker.extend(::QueueBus::Adapters::Resque::RetryHandlers)
       end
 
       def redis(&block)
@@ -18,10 +21,6 @@ module QueueBus
 
       def enqueue_at(epoch_seconds, queue_name, klass, hash)
         ::Resque.enqueue_at_with_queue(queue_name, epoch_seconds, klass, hash)
-      end
-
-      def worker_included(base)
-        load_retry(base)
       end
 
       def setup_heartbeat!(queue_name)
@@ -42,11 +41,6 @@ module QueueBus
 
       private
 
-      def load_retry(base)
-        base.extend(::Resque::Plugins::ExponentialBackoff)
-        base.extend(::QueueBus::Adapters::Resque::RetryHandlers)
-      end
-
       module RetryHandlers
         # @failure_hooks_already_ran on https://github.com/defunkt/resque/tree/1-x-stable
         # to prevent running twice
@@ -57,7 +51,8 @@ module QueueBus
         def on_failure_aaa(exception, *args)
           # note: sorted alphabetically
           # queue needs to be set for rety to work (know what queue in Requeue.class_to_queue)
-          @my_queue = args[0]["bus_rider_queue"]
+          hash = ::QueueBus::Util.decode(args[0])
+          @my_queue = hash["bus_rider_queue"]
         end
 
         def on_failure_zzz(exception, *args)

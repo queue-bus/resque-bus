@@ -11,15 +11,15 @@ describe "Retry" do
   end
 
   it "should have the methods" do
-    ::QueueBus::Rider.methods.should include(:on_failure_aaa)
-    ::RetryTest1.methods.should include(:on_failure_aaa)
+    ::QueueBus::Worker.methods.should include(:on_failure_aaa)
+    ::QueueBus::Worker.methods.should include(:on_failure_zzz)
   end
 
   # it "should retry failed riders"
 
   describe "Failed Jobs" do
     before(:each) do
-      QueueBus.enqueue_to("testing", "::QueueBus::Rider", { "bus_rider_app_key" => "r2", "bus_rider_sub_key" => "event_name", "bus_event_type" => "event_name", "ok" => true, "bus_rider_queue" => "testing" })
+      QueueBus.enqueue_to("testing", "QueueBus::Worker", { "bus_class_proxy" => "QueueBus::Rider", "bus_rider_app_key" => "r2", "bus_rider_sub_key" => "event_name", "bus_event_type" => "event_name", "ok" => true, "bus_rider_queue" => "testing" })
 
       @worker = Resque::Worker.new(:testing)
       @worker.register_worker
