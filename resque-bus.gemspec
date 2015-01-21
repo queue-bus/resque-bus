@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = ResqueBus::VERSION
   s.authors     = ["Brian Leonard"]
   s.email       = ["brian@bleonard.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/queue-bus/resque-bus"
   s.summary     = %q{A simple event bus on top of Resque}
   s.description = %q{A simple event bus on top of Resque. Publish and subscribe to events as they occur through a queue.}
 
