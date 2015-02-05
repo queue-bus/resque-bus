@@ -15,12 +15,12 @@ module QueueBus
         block.call(::Resque.redis)
       end
 
-      def enqueue(queue_name, klass, hash)
-        ::Resque.enqueue_to(queue_name, klass, hash)
+      def enqueue(queue_name, klass, json)
+        ::Resque.enqueue_to(queue_name, klass, json)
       end
 
-      def enqueue_at(epoch_seconds, queue_name, klass, hash)
-        ::Resque.enqueue_at_with_queue(queue_name, epoch_seconds, klass, hash)
+      def enqueue_at(epoch_seconds, queue_name, klass, json)
+        ::Resque.enqueue_at_with_queue(queue_name, epoch_seconds, klass, json)
       end
 
       def setup_heartbeat!(queue_name)
