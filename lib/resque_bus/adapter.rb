@@ -27,7 +27,7 @@ module QueueBus
         # turn on the heartbeat
         # should be down after loading scheduler yml if you do that
         # otherwise, anytime
-        name     = 'resquebus_hearbeat'
+        name     = 'resquebus_heartbeat'
         schedule = { 'class' => '::QueueBus::Heartbeat',
                      'cron'  => '* * * * *',   # every minute
                      'queue' => queue_name,

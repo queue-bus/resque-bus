@@ -1,9 +1,29 @@
 # require 'resque_bus/tasks'
 # will give you these tasks
 
-
+require "queue_bus/tasks"
 require "resque/tasks"
+
 namespace :resquebus do
+  # deprecated
+  task :setup => ["queuebus:setup"] do
+    ResqueBus.note_deprecation "[DEPRECATION] rake resquebus:setup is deprecated. Use rake queuebus:setup instead."
+  end
+
+  task :driver => ["queuebus:driver"] do
+    ResqueBus.note_deprecation "[DEPRECATION] rake resquebus:driver is deprecated. Use rake queuebus:driver instead."
+  end
+
+  task :subscribe => ["queuebus:subscribe"] do
+    ResqueBus.note_deprecation "[DEPRECATION] rake resquebus:subscribe is deprecated. Use rake queuebus:subscribe instead."
+  end
+
+  task :unsubsribe => ["queuebus:unsubsribe"] do
+    ResqueBus.note_deprecation "[DEPRECATION] rake resquebus:driver is deprecated. Use rake queuebus:unsubsribe instead."
+  end
+end
+
+namespace :queuebus do
 
   desc "Setup will configure a resque task to run before resque:work"
   task :setup => [ :preload ] do
@@ -23,22 +43,7 @@ namespace :resquebus do
     end
   end
 
-  desc "Subscribes this application to QueueBus events"
-  task :subscribe => [ :preload ] do
-    manager = ::QueueBus::TaskManager.new(true)
-    count = manager.subscribe!
-    raise "No subscriptions created" if count == 0
-  end
-
-  desc "Unsubscribes this application from QueueBus events"
-  task :unsubscribe => [ :preload ] do
-    require 'resque-bus'
-    manager = ::QueueBus::TaskManager.new(true)
-    count = manager.unsubscribe!
-    puts "No subscriptions unsubscribed" if count == 0
-  end
-
-  desc "Sets the queue to work the driver  Use: `rake resquebus:driver resque:work`"
+  desc "Sets the queue to work the driver  Use: `rake queuebus:driver resque:work`"
   task :driver => [ :preload ] do
     ENV['QUEUES'] = ::QueueBus.incoming_queue
   end
@@ -50,11 +55,6 @@ namespace :resquebus do
     require "resque/failure/redis"
     require "resque/failure/multiple_with_retry_suppression"
 
-    # change the namespace to be the ones used by QueueBus
-    # save the old one for handling later
-    QueueBus.original_redis = Resque.redis
-    Resque.redis = QueueBus.redis
-
     Resque::Failure::MultipleWithRetrySuppression.classes = [Resque::Failure::Redis]
     Resque::Failure.backend = Resque::Failure::MultipleWithRetrySuppression
 
@@ -65,7 +65,7 @@ namespace :resquebus do
   # examples to test out the system
   namespace :example do
     desc "Publishes events to example applications"
-    task :publish => [ "resquebus:preload", "resquebus:setup" ] do
+    task :publish => [ "queuebus:preload", "queuebus:setup" ] do
       which = ["one", "two", "three", "other"][rand(4)]
       QueueBus.publish("event_#{which}", { "rand" => rand(99999)})
       QueueBus.publish("event_all", { "rand" => rand(99999)})
@@ -74,7 +74,7 @@ namespace :resquebus do
     end
 
     desc "Sets up an example config"
-    task :register => [ "resquebus:preload"] do
+    task :register => [ "queuebus:preload"] do
       QueueBus.dispatch("example") do
         subscribe "event_one" do
           puts "event1 happened"
@@ -95,12 +95,12 @@ namespace :resquebus do
     end
 
     desc "Subscribes this application to QueueBus example events"
-    task :subscribe => [ :register, "resquebus:subscribe" ]
+    task :subscribe => [ :register, "queuebus:subscribe" ]
 
     desc "Start a QueueBus example worker"
-    task :work => [ :register, "resquebus:setup", "resque:work" ]
+    task :work => [ :register, "queuebus:setup", "resque:work" ]
 
     desc "Start a QueueBus example worker"
-    task :driver => [ :register, "resquebus:driver", "resque:work" ]
+    task :driver => [ :register, "queuebus:driver", "resque:work" ]
   end
 end
