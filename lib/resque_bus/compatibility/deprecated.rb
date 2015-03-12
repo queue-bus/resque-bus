@@ -5,7 +5,13 @@ module ResqueBus
       if @noted_deprecations[message]
         @noted_deprecations[message] += 1
       else
-        warn message
+        if ENV['QUEUES'] || ENV['QUEUE'] # in background
+          if ENV['VVERBOSE'] || ENV['LOGGING'] || ENV['VERBOSE']
+            warn message
+          end
+        else # probably in test
+          warn message
+        end
         @noted_deprecations[message] = 1
       end
     end
