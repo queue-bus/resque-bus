@@ -56,6 +56,7 @@ RSpec.configure do |config|
 
   config.before(:each) do
     reset_test_adapter
+    ResqueBus.show_deprecations = true
   end
   config.after(:each) do
     begin

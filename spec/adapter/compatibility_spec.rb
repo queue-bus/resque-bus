@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe "Compatibility with old resque-bus" do
   before(:each) do
-    ResqueBus.stub("note_deprecation") # no need to say anything
+    ResqueBus.show_deprecations = false # expected
 
     QueueBus.dispatch("r1") do
       subscribe "event_name" do |attributes|

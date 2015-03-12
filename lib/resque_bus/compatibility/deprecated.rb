@@ -1,17 +1,22 @@
 module ResqueBus
   module Deprecated
+    def show_deprecations=val
+      @show_deprecations = val
+    end
+
+    def show_deprecations?
+      return @show_deprecations if defined?(@show_deprecations)
+      return true if !ENV['QUEUES'] && !ENV['QUEUE'] # not in background, probably test
+      return true if ENV['VVERBOSE'] || ENV['LOGGING'] || ENV['VERBOSE']
+      false
+    end
+    
     def note_deprecation(message)
       @noted_deprecations ||= {}
       if @noted_deprecations[message]
         @noted_deprecations[message] += 1
       else
-        if ENV['QUEUES'] || ENV['QUEUE'] # in background
-          if ENV['VVERBOSE'] || ENV['LOGGING'] || ENV['VERBOSE']
-            warn message
-          end
-        else # probably in test
-          warn message
-        end
+        warn(message) if show_deprecations?
         @noted_deprecations[message] = 1
       end
     end
