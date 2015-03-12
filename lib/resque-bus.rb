@@ -11,6 +11,7 @@ module ResqueBus
   autoload :Driver,      'resque_bus/compatibility/driver'
   autoload :Rider,       'resque_bus/compatibility/rider'
   autoload :Publisher,   'resque_bus/compatibility/publisher'
+  autoload :Heartbeat,   'resque_bus/compatibility/heartbeat'
 
   extend ::ResqueBus::Deprecated
 end
