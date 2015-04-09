@@ -23,11 +23,24 @@ namespace :resquebus do
   end
 end
 
+namespace :resque do
+  Rake::Task[:work].enhance ['queuebus:set_redis_server']
+end
+
 namespace :queuebus do
 
-  desc "Setup will configure a resque task to run before resque:work"
-  task :setup => [ :preload ] do
+  desc 'Sets the resque worker to use the QueueBus Redis server'
+  task :set_redis_server do
+    unless ENV['USE_QUEUEBUS_REDIS'].nil?
+      Resque.redis = QueueBus.adapter.queuebus_redis
+    end
+  end
 
+  Rake::Task[:subscribe].enhance [:use_queuebus_redis]
+  Rake::Task[:unsubscribe].enhance [:use_queuebus_redis]
+
+  desc "Setup will configure a resque task to run before resque:work"
+  task setup: [:preload, :use_queuebus_redis] do
     if ENV['QUEUES'].nil?
       manager = ::QueueBus::TaskManager.new(true)
       queues = manager.queue_names
@@ -43,8 +56,15 @@ namespace :queuebus do
     end
   end
 
+  desc "Instruct Resque to use the QueueBus redis instance"
+  task :use_queuebus_redis do
+    # We pass state through the environment because the actual worker runs
+    # in a different process
+    ENV["USE_QUEUEBUS_REDIS"] = "true"
+  end
+
   desc "Sets the queue to work the driver  Use: `rake queuebus:driver resque:work`"
-  task :driver => [ :preload ] do
+  task :driver => [:preload, :use_queuebus_redis] do
     ENV['QUEUES'] = ::QueueBus.incoming_queue
   end
 

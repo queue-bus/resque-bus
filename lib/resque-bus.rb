@@ -1,5 +1,6 @@
 require "queue-bus"
 require "resque_bus/adapter"
+require "resque_bus/subscriber"
 require "resque_bus/version"
 
 module ResqueBus
