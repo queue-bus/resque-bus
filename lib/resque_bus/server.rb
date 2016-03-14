@@ -16,7 +16,7 @@ module ResqueBus
         
         
         post '/bus/unsubscribe' do
-          app = Application.new(params[:name]).unsubscribe
+          app = ::QueueBus::Application.new(params[:name]).unsubscribe
           redirect u('bus')
         end
         
