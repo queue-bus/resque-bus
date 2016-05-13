@@ -108,6 +108,18 @@ end
 
 Note: This subscribes when this class is loaded, so it needs to be in your load or otherwise referenced/required during app initialization to work properly.
 
+### Dedicated Redis Instance
+
+By default, Resque Bus uses the same instance of Redis as Resque.  If desired, Resque-Bus can be configured to use a different instance.  In your initializer:
+
+```ruby
+QueueBus.adapter.redis = 'redis://my-other-redis-host:1234/4'
+```
+
+Resque Bus accepts the same types of Redis server descriptions as Resque.
+
+Once that instance variable is set, Resque Bus tasks will default to using it, including both the driver and the queuebus consumers.  All the commands described below will 'just work' as written, including subscribe, unsubscribe, driver, and worker.
+
 ### Commands
 
 Each app needs to tell Redis about its subscriptions:
