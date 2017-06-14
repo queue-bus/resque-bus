@@ -28,7 +28,8 @@ module QueueBus
         # should be down after loading scheduler yml if you do that
         # otherwise, anytime
         name     = 'resquebus_heartbeat'
-        schedule = { 'class' => '::QueueBus::Heartbeat',
+        schedule = { 'class' => '::QueueBus::Worker',
+                     'args'=>[::QueueBus::Util.encode({'bus_class_proxy' => '::QueueBus::Heartbeat'})],
                      'cron'  => '* * * * *',   # every minute
                      'queue' => queue_name,
                      'description' => 'I publish a heartbeat_minutes event every minute'
