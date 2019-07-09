@@ -13,6 +13,58 @@ else
 </script>
 
 <%
+
+  def fixup_query(query_string)
+    has_open_brace = query_string.include?("{")
+    has_close_brace = query_string.include?("}")
+    has_multiple_lines = query_string.include?("\n")
+    has_colon = query_string.include?(":")
+    has_comma = query_string.include?(",")
+    has_quote = query_string.include?("\"")
+
+    if !has_open_brace && !has_close_brace
+      # maybe they just forgot the braces
+      fixed = JSON.parse("{ #{query_string} }") rescue nil
+      return fixed if fixed
+    end
+
+    if !has_open_brace
+      # maybe they just forgot the braces
+      fixed = JSON.parse("{ #{query_string}") rescue nil
+      return fixed if fixed
+    end
+
+    if !has_close_brace
+      # maybe they just forgot the braces
+      fixed = JSON.parse("#{query_string} }") rescue nil
+      return fixed if fixed
+    end
+
+    if !has_multiple_lines && !has_colon && !has_open_brace && !has_close_brace
+      # we say they just put a bus_event type here, so help them out
+      return {"bus_event_type" => query_string, "more_here" => true}
+    end
+
+    if has_colon && !has_quote
+      # maybe it's some search syntax like this: field: value other: true, etc
+      # maybe use something like this later: https://github.com/dxwcyber/search-query-parser
+
+      # quote all the strings, (simply) tries to avoid integers
+      test_query = query_string.gsub(/([a-zA-z]\w*)/,'"\0"')
+      if !has_comma
+        test_query.gsub!("\n", ",\n")
+      end
+      if !has_open_brace  && !has_close_brace
+        test_query = "{ #{test_query} }"
+      end
+
+      fixed = JSON.parse(test_query) rescue nil
+      return fixed if fixed
+    end
+
+    nil
+  end
+
   app_hash = {}
   class_hash = {}
   event_hash = {}
@@ -24,8 +76,13 @@ else
     begin
       query_attributes = JSON.parse(query_string)
     rescue Exception => e
-      query_attributes = nil
-      query_error = e.message
+      # see if simple event type to help user get in the right format
+      query_attributes = fixup_query(query_string)
+      # give error if we couldn't fix it up
+      if !query_attributes
+        query_attributes = nil
+        query_error = e.message
+      end
     end
   end
   
@@ -112,7 +169,7 @@ else
 <p class='intro'>Enter JSON of an event to see applicable subscriptions.</p>
 <form method="GET" action="<%= u "bus" %>" style="float:none;padding:0;margin:0;">
     <div style="text-align: center;width:300px;">
-    <textarea name="query" style="padding: 10px;height:150px;width:300px;"><%= 
+    <textarea name="query" style="padding: 10px;height:150px;width:300px;font-size:14px;font-family:monospace"><%= 
       h(query_attributes ? JSON.pretty_generate(query_attributes).strip : query_string) 
     %></textarea>
     <br/>
