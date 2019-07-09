@@ -22,15 +22,11 @@ else
   query_error = nil
   if query_string.length > 0
     begin
-      query_attributes = JSON.parse(query_string)
+      query_attributes = ::ResqueBus::Server::Helpers.parse_query(query_string)
+      raise "Not a JSON Object" unless query_attributes.is_a?(Hash)
     rescue Exception => e
-      # see if simple event type to help user get in the right format
-      query_attributes = ::ResqueBus::Server::Helpers.fixup_query(query_string)
-      # give error if we couldn't fix it up
-      if !query_attributes
-        query_attributes = nil
-        query_error = e.message
-      end
+      query_attributes = nil
+      query_error = e.message
     end
 
     if query_attributes

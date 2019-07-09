@@ -25,13 +25,37 @@ module ResqueBus
 
     class Helpers
       class << self
-        def fixup_query(query_string)
+        def parse_query(query_string)
           has_open_brace = query_string.include?("{")
           has_close_brace = query_string.include?("}")
           has_multiple_lines = query_string.include?("\n")
           has_colon = query_string.include?(":")
           has_comma = query_string.include?(",")
           has_quote = query_string.include?("\"")
+
+          exception = nil
+
+          # first let's see if it parses
+          begin
+            query_attributes = JSON.parse(query_string)
+            raise "Not a JSON Object" unless query_attributes.is_a?(Hash)
+          rescue Exception => e
+            exception = e
+          end
+          return query_attributes unless exception
+
+          if query_attributes
+            # it parsed but it's something else
+            if query_attributes.is_a?(Array) && query_attributes.length == 1
+              # maybe it's the thing from the queue
+              json_string = query_attributes.first
+              fixed = JSON.parse(json_string) rescue nil
+              return fixed if fixed
+            end
+
+            # something else?
+            raise exception
+          end
 
           if !has_open_brace && !has_close_brace
             # maybe they just forgot the braces
@@ -89,11 +113,11 @@ module ResqueBus
             ruby_hash_text.gsub!(/=>nil/, '=>null')
             # Transform object string object value delimiter to colon delimiter
             ruby_hash_text.gsub!(/([{,]\s*)(".+?"|[0-9]+\.?[0-9]*)\s*=>/, '\1\2:')
-            fixed = YAML.load(ruby_hash_text) rescue nil
+            fixed = JSON.parse(ruby_hash_text) rescue nil
             return fixed if fixed
           end
 
-          nil
+          raise exception
         end
 
         def sort_query(query_attributes)
