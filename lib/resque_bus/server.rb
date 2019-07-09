@@ -73,6 +73,26 @@ module ResqueBus
             return fixed if fixed
           end
 
+          if has_open_brace && has_close_brace
+            # maybe the whole thing is a hash output from a hash.inspect log
+            ruby_hash_text = query_string.clone
+            # https://stackoverflow.com/questions/1667630/how-do-i-convert-a-string-object-into-a-hash-object
+            # Transform object string symbols to quoted strings
+            ruby_hash_text.gsub!(/([{,]\s*):([^>\s]+)\s*=>/, '\1"\2"=>')
+            # Transform object string numbers to quoted strings
+            ruby_hash_text.gsub!(/([{,]\s*)([0-9]+\.?[0-9]*)\s*=>/, '\1"\2"=>')
+            # Transform object value symbols to quotes strings
+            ruby_hash_text.gsub!(/([{,]\s*)(".+?"|[0-9]+\.?[0-9]*)\s*=>\s*:([^,}\s]+\s*)/, '\1\2=>"\3"')
+            # Transform array value symbols to quotes strings
+            ruby_hash_text.gsub!(/([\[,]\s*):([^,\]\s]+)/, '\1"\2"')
+            # fix up nil situation
+            ruby_hash_text.gsub!(/=>nil/, '=>null')
+            # Transform object string object value delimiter to colon delimiter
+            ruby_hash_text.gsub!(/([{,]\s*)(".+?"|[0-9]+\.?[0-9]*)\s*=>/, '\1\2:')
+            fixed = YAML.load(ruby_hash_text) rescue nil
+            return fixed if fixed
+          end
+
           nil
         end
 
