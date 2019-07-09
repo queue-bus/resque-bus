@@ -19,9 +19,14 @@ else
   query_string = params[:query].to_s.strip
 
   query_attributes = nil
+  query_error = nil
   if query_string.length > 0
-    query_attributes = JSON.parse(query_string) rescue nil
-    query_attributes ||= { "bus_event_type" => query_string, "other" => true }
+    begin
+      query_attributes = JSON.parse(query_string)
+    rescue Exception => e
+      query_attributes = nil
+      query_error = e.message
+    end
   end
   
   # collect each differently
@@ -103,16 +108,23 @@ else
   end
 %>
 
-<h1 class='wi'>Event Search</h1>
-<p class='intro'>Filter by the Event Type or full JSON.</p>
+<h1 class='wi'>Sample Event</h1>
+<p class='intro'>Enter JSON of an event to see applicable subscriptions.</p>
 <form method="GET" action="<%= u "bus" %>" style="float:none;padding:0;margin:0;">
-  <input type="text" name="query" value="<%= h(query_string) %>" size="50" style="padding: 5px;">
-  <input type="submit" name="" value="Search" />
+    <div style="text-align: center;width:300px;">
+    <textarea name="query" style="padding: 10px;height:150px;width:300px;"><%= 
+      h(query_attributes ? JSON.pretty_generate(query_attributes).strip : query_string) 
+    %></textarea>
+    <br/>
+    <button onclick="window.location.href = '<%= u "bus" %>'; return false;">Clear</button>
+    <input type="submit" name="" value="Filter results to this event"/>
+  </div>
 </form>
 
-<% if query_attributes %>
-  <blockquote><pre style="font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#f4f4f4;color:#666;"><code><%= 
-  h(JSON.pretty_generate(query_attributes).strip).gsub("\n", "<br/>").gsub(" ", "&nbsp;") 
+<% if query_error %>
+
+  <blockquote><pre style="font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#f2dede;color:#a94442;"><code><%= 
+  h(query_error.strip)
   %></code></pre></blockquote>
 <% end %>
 <hr/>
