@@ -9,6 +9,13 @@ if (agree)
 else
 	return false ;
 }
+
+function setSample() {
+  var text = document.getElementById("query_attributes").textContent;
+  var textArea = document.getElementById('querytext');
+  textArea.value = text;
+  return false;
+}
 // -->
 </script>
 
@@ -112,7 +119,7 @@ else
 <p class='intro'>Enter JSON of an event to see applicable subscriptions.</p>
 <div style="text-align: center;width:700px;">
   <form method="GET" action="<%= u "bus" %>" style="float:none;padding:0;margin:0;">
-    <textarea name="query" style="padding: 10px;height:150px;width:700px;font-size:14px;font-family:monospace"><%= 
+    <textarea id="querytext" name="query" style="padding: 10px;height:150px;width:700px;font-size:14px;font-family:monospace"><%= 
       h(query_string) 
     %></textarea>
     <br/>
@@ -127,9 +134,12 @@ else
   %></code></pre></blockquote>
 <% end %>
 <% if query_attributes %>
-  <blockquote><pre style="text-align:left;font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#dff0d8;color:#3c763d;"><code><%= 
+  <blockquote><pre style="text-align:left;font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#dff0d8;color:#3c763d;"><code id="query_attributes"><%= 
   h(JSON.pretty_generate(query_attributes).strip)
   %></code></pre></blockquote>
+  <div style="text-align:right;">
+    <button onclick="return setSample();">Set Sample</button>
+  </div>
 <% end %>
 
 <hr/>
