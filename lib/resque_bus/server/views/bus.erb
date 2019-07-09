@@ -16,20 +16,38 @@ else
   app_hash = {}
   class_hash = {}
   event_hash = {}
+  query_string = params[:query].to_s.strip
+
+  query_attributes = nil
+  if query_string.length > 0
+    query_attributes = JSON.parse(query_string) rescue nil
+    query_attributes ||= { "bus_event_type" => query_string, "other" => true }
+  end
   
   # collect each differently
   ::QueueBus::Application.all.each do |app|
     app_key = app.app_key
     
-    app_hash[app_key] ||= []
-    app.event_display_tuples.each do |tuple|
-      class_name, queue, filters = tuple
+    # TODO: all of this can move to method in queue-bus to replace event_display_tuples
+    if query_attributes
+      subscriptions = app.subscription_matches(query_attributes)
+    else
+      subscriptions = app.send(:subscriptions).all
+    end
+
+
+    subscriptions.each do |sub|
+      class_name = sub.class_name
+      queue = sub.queue_name
+      filters = sub.matcher.filters
+
       if filters["bus_event_type"]
         event = filters["bus_event_type"]
       else
         event = "see filter"
       end
       
+      app_hash[app_key] ||= []
       app_hash[app_key] << [event, class_name, queue, filters]
       
       class_hash[class_name] ||= []
@@ -53,7 +71,7 @@ else
     form = ""
     if button
       text, url = button
-      form = "<form method='POST' action='#{u url}' style='float:left; padding:0 5px 0 0;margin:0;'><input type='submit' name='' value='#{text}' style='padding:0;margin:0;' onclick=\"return confirmSubmit();\"/><input type='hidden' name='name' value='#{h(name)}' /></form>"
+      form = "<form method='POST' action='#{u url}' style='float:left; padding:0 5px 0 0;margin:0;'><input type='submit' name='' value='#{h(text)}' style='padding:0;margin:0;' onclick=\"return confirmSubmit();\"/><input type='hidden' name='name' value='#{h(name)}' /></form>"
     end
     
     if !val
@@ -85,7 +103,19 @@ else
   end
 %>
 
+<h1 class='wi'>Event Search</h1>
+<p class='intro'>Filter by the Event Type or full JSON.</p>
+<form method="GET" action="<%= u "bus" %>" style="float:none;padding:0;margin:0;">
+  <input type="text" name="query" value="<%= h(query_string) %>" size="50" style="padding: 5px;">
+  <input type="submit" name="" value="Search" />
+</form>
 
+<% if query_attributes %>
+  <blockquote><pre style="font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#f4f4f4;color:#666;"><code><%= 
+  h(JSON.pretty_generate(query_attributes).strip).gsub("\n", "<br/>").gsub(" ", "&nbsp;") 
+  %></code></pre></blockquote>
+<% end %>
+<hr/>
 
 <h1 class='wi'>Applications</h1>
 <p class='intro'>The apps below have registered the given classes and queues.</p>
@@ -97,7 +127,8 @@ else
     <th>Queue</th>
     <th>Filters</th>
   </tr>
-  <%= output_hash(app_hash, ["Unsubscribe", "bus/unsubscribe"]) %>
+
+  <%= output_hash(app_hash, query_attributes ? false : ["Unsubscribe", "bus/unsubscribe"]) %>
 </table>
 
 <p>&nbsp;</p>
