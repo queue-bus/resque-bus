@@ -96,6 +96,15 @@ module ResqueBus
           nil
         end
 
+        def sort_query(query_attributes)
+          query_attributes.each do |key, value|
+            if value.is_a?(Hash)
+              query_attributes[key] = sort_query(value)
+            end
+          end
+          query_attributes.sort_by { |key| key }.to_h
+        end
+
         def query_subscriptions(app, query_attributes)
           # TODO: all of this can move to method in queue-bus to replace event_display_tuples
           if query_attributes

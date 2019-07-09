@@ -32,6 +32,11 @@ else
         query_error = e.message
       end
     end
+
+    if query_attributes
+      # sort keys for display
+      query_attributes = ::ResqueBus::Server::Helpers.sort_query(query_attributes)
+    end
   end
   
   # collect each differently
