@@ -22,6 +22,70 @@ module ResqueBus
         
       }
     end
+
+    class Helpers
+      class << self
+        def fixup_query(query_string)
+          has_open_brace = query_string.include?("{")
+          has_close_brace = query_string.include?("}")
+          has_multiple_lines = query_string.include?("\n")
+          has_colon = query_string.include?(":")
+          has_comma = query_string.include?(",")
+          has_quote = query_string.include?("\"")
+
+          if !has_open_brace && !has_close_brace
+            # maybe they just forgot the braces
+            fixed = JSON.parse("{ #{query_string} }") rescue nil
+            return fixed if fixed
+          end
+
+          if !has_open_brace
+            # maybe they just forgot the braces
+            fixed = JSON.parse("{ #{query_string}") rescue nil
+            return fixed if fixed
+          end
+
+          if !has_close_brace
+            # maybe they just forgot the braces
+            fixed = JSON.parse("#{query_string} }") rescue nil
+            return fixed if fixed
+          end
+
+          if !has_multiple_lines && !has_colon && !has_open_brace && !has_close_brace
+            # we say they just put a bus_event type here, so help them out
+            return {"bus_event_type" => query_string, "more_here" => true}
+          end
+
+          if has_colon && !has_quote
+            # maybe it's some search syntax like this: field: value other: true, etc
+            # maybe use something like this later: https://github.com/dxwcyber/search-query-parser
+
+            # quote all the strings, (simply) tries to avoid integers
+            test_query = query_string.gsub(/([a-zA-z]\w*)/,'"\0"')
+            if !has_comma
+              test_query.gsub!("\n", ",\n")
+            end
+            if !has_open_brace  && !has_close_brace
+              test_query = "{ #{test_query} }"
+            end
+
+            fixed = JSON.parse(test_query) rescue nil
+            return fixed if fixed
+          end
+
+          nil
+        end
+
+        def query_subscriptions(app, query_attributes)
+          # TODO: all of this can move to method in queue-bus to replace event_display_tuples
+          if query_attributes
+            subscriptions = app.subscription_matches(query_attributes)
+          else
+            subscriptions = app.send(:subscriptions).all
+          end
+        end
+      end
+    end
   end
 end
 

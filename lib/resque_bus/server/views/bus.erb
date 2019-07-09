@@ -13,58 +13,6 @@ else
 </script>
 
 <%
-
-  def fixup_query(query_string)
-    has_open_brace = query_string.include?("{")
-    has_close_brace = query_string.include?("}")
-    has_multiple_lines = query_string.include?("\n")
-    has_colon = query_string.include?(":")
-    has_comma = query_string.include?(",")
-    has_quote = query_string.include?("\"")
-
-    if !has_open_brace && !has_close_brace
-      # maybe they just forgot the braces
-      fixed = JSON.parse("{ #{query_string} }") rescue nil
-      return fixed if fixed
-    end
-
-    if !has_open_brace
-      # maybe they just forgot the braces
-      fixed = JSON.parse("{ #{query_string}") rescue nil
-      return fixed if fixed
-    end
-
-    if !has_close_brace
-      # maybe they just forgot the braces
-      fixed = JSON.parse("#{query_string} }") rescue nil
-      return fixed if fixed
-    end
-
-    if !has_multiple_lines && !has_colon && !has_open_brace && !has_close_brace
-      # we say they just put a bus_event type here, so help them out
-      return {"bus_event_type" => query_string, "more_here" => true}
-    end
-
-    if has_colon && !has_quote
-      # maybe it's some search syntax like this: field: value other: true, etc
-      # maybe use something like this later: https://github.com/dxwcyber/search-query-parser
-
-      # quote all the strings, (simply) tries to avoid integers
-      test_query = query_string.gsub(/([a-zA-z]\w*)/,'"\0"')
-      if !has_comma
-        test_query.gsub!("\n", ",\n")
-      end
-      if !has_open_brace  && !has_close_brace
-        test_query = "{ #{test_query} }"
-      end
-
-      fixed = JSON.parse(test_query) rescue nil
-      return fixed if fixed
-    end
-
-    nil
-  end
-
   app_hash = {}
   class_hash = {}
   event_hash = {}
@@ -77,7 +25,7 @@ else
       query_attributes = JSON.parse(query_string)
     rescue Exception => e
       # see if simple event type to help user get in the right format
-      query_attributes = fixup_query(query_string)
+      query_attributes = ::ResqueBus::Server::Helpers.fixup_query(query_string)
       # give error if we couldn't fix it up
       if !query_attributes
         query_attributes = nil
@@ -90,14 +38,7 @@ else
   ::QueueBus::Application.all.each do |app|
     app_key = app.app_key
     
-    # TODO: all of this can move to method in queue-bus to replace event_display_tuples
-    if query_attributes
-      subscriptions = app.subscription_matches(query_attributes)
-    else
-      subscriptions = app.send(:subscriptions).all
-    end
-
-
+    subscriptions = ::ResqueBus::Server::Helpers.query_subscriptions(app, query_attributes)
     subscriptions.each do |sub|
       class_name = sub.class_name
       queue = sub.queue_name
@@ -167,23 +108,28 @@ else
 
 <h1 class='wi'>Sample Event</h1>
 <p class='intro'>Enter JSON of an event to see applicable subscriptions.</p>
-<form method="GET" action="<%= u "bus" %>" style="float:none;padding:0;margin:0;">
-    <div style="text-align: center;width:300px;">
-    <textarea name="query" style="padding: 10px;height:150px;width:300px;font-size:14px;font-family:monospace"><%= 
-      h(query_attributes ? JSON.pretty_generate(query_attributes).strip : query_string) 
+<div style="text-align: center;width:700px;">
+  <form method="GET" action="<%= u "bus" %>" style="float:none;padding:0;margin:0;">
+    <textarea name="query" style="padding: 10px;height:150px;width:700px;font-size:14px;font-family:monospace"><%= 
+      h(query_string) 
     %></textarea>
     <br/>
     <button onclick="window.location.href = '<%= u "bus" %>'; return false;">Clear</button>
     <input type="submit" name="" value="Filter results to this event"/>
-  </div>
-</form>
+  </form>
+</div>
 
 <% if query_error %>
-
-  <blockquote><pre style="font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#f2dede;color:#a94442;"><code><%= 
+  <blockquote><pre style="text-align:left;font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#f2dede;color:#a94442;"><code><%= 
   h(query_error.strip)
   %></code></pre></blockquote>
 <% end %>
+<% if query_attributes %>
+  <blockquote><pre style="text-align:left;font-family:monospace;margin:5px 0 5px 0;padding:10px;background:#dff0d8;color:#3c763d;"><code><%= 
+  h(JSON.pretty_generate(query_attributes).strip)
+  %></code></pre></blockquote>
+<% end %>
+
 <hr/>
 
 <h1 class='wi'>Applications</h1>
