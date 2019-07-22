@@ -26,6 +26,7 @@ module ResqueBus
     class Helpers
       class << self
         def parse_query(query_string)
+          query_string = query_string.to_s.strip
           has_open_brace = query_string.include?("{")
           has_close_brace = query_string.include?("}")
           has_multiple_lines = query_string.include?("\n")
