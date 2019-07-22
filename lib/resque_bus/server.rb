@@ -48,7 +48,8 @@ module ResqueBus
           if query_attributes
             # it parsed but it's something else
             if query_attributes.is_a?(Array) && query_attributes.length == 1
-              # maybe it's the thing from the queue
+              # maybe it's pasted from the inputs in the web UI like queues/bus_incoming
+              # this is an array (of job arguments) and the first one is a JSON string
               json_string = query_attributes.first
               fixed = JSON.parse(json_string) rescue nil
               return fixed if fixed
