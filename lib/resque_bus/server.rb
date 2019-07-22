@@ -40,7 +40,7 @@ module ResqueBus
           begin
             query_attributes = JSON.parse(query_string)
             raise "Not a JSON Object" unless query_attributes.is_a?(Hash)
-          rescue Exception => e
+          rescue StandardError => e
             exception = e
           end
           return query_attributes unless exception
