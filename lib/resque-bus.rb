@@ -16,4 +16,4 @@ module ResqueBus
   extend ::ResqueBus::Deprecated
 end
 
-QueueBus.adapter = QueueBus::Adapters::Resque.new
+QueueBus.adapter = QueueBus::Adapters::Resque.new unless QueueBus.has_adapter?
