@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] 2019-07-29
+
 ### Added
 - Adds `QueueBus.has_adapter?` to check whether the adapter is set before setting it to resque. This will allow multiple adapters to be loaded without error.
 
