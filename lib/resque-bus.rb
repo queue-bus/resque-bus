@@ -16,4 +16,9 @@ module ResqueBus
   extend ::ResqueBus::Deprecated
 end
 
-QueueBus.adapter = QueueBus::Adapters::Resque.new
+if QueueBus.has_adapter?
+  warn '[ResqueBus] Not setting adapter on queue-bus because ' \
+      "#{QueueBus.adapter.class.name} is already the adapter"
+else
+  QueueBus.adapter = QueueBus::Adapters::Resque.new
+end

@@ -1,6 +1,5 @@
-source "http://rubygems.org"
+source "https://rubygems.org"
 
 gemspec
 
 gem "rake"
-# gem "queue-bus", path: "../queue-bus"
