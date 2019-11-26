@@ -60,7 +60,7 @@ RSpec.configure do |config|
   end
   config.after(:each) do
     begin
-      QueueBus.redis { |redis| redis.flushall }
+      QueueBus.redis { |redis| redis.flushdb }
     rescue
     end
     QueueBus.send(:reset)
